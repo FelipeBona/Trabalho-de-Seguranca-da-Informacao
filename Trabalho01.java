@@ -64,6 +64,8 @@ public class Trabalho01 {
                     System.out.println(e.getMessage());
                 }
 
+                System.out.println("Pronto!");
+
             } else if (opcao.toLowerCase().equals("d")) {
                 boolean arquivoExiste = true;
                 File file;
@@ -97,7 +99,7 @@ public class Trabalho01 {
                     } else {
                         arquivoExiste = true;
                     }
-                    
+
                 } while (!arquivoExiste);
 
                 try {
@@ -106,6 +108,8 @@ public class Trabalho01 {
                     System.out.println(e.getMessage());
                 }
 
+                System.out.println("Pronto!");
+
             } else if (opcao.toLowerCase().equals("s")) {
                 loop = false;
 
@@ -113,8 +117,6 @@ public class Trabalho01 {
                 System.out.println("Opção inválida.");
 
             }
-
-            scanner.close();
 
         } 
 
