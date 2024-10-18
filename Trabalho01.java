@@ -3,10 +3,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Scanner;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 public class Trabalho01 {
-    public static void main(String[] args) {
+
+    private static final String ALGORITMO = "AES";
+    private static final String TRANSFORMACAO = "AES/CBC/PKCS5Padding";
+
+    public static void main(String[] args) throws Exception {
         boolean loop = true;
         Scanner scanner = new Scanner(System.in);
 
@@ -33,7 +42,10 @@ public class Trabalho01 {
 
                 } while (!arquivoExiste);
 
-                String textoCifrado = cifrar(file.toString());
+                System.out.print("Forneça a chave:");
+                String chave = scanner.next();
+
+                String textoCifrado = cifrar(file.toString(), chave);
                 Path path;
                 arquivoExiste = true;
 
@@ -84,7 +96,10 @@ public class Trabalho01 {
 
                 } while (!arquivoExiste);
 
-                String textoDecifrado = decifrar(file.toString());
+                System.out.print("Forneça a chave:");
+                String chave = scanner.next();
+
+                String textoDecifrado = decifrar(file.toString(), chave);
                 Path path;
                 arquivoExiste = true;
 
@@ -124,11 +139,28 @@ public class Trabalho01 {
 
     }
 
-    public static String cifrar(String texto) {
-        return "foo";
+    public static String cifrar(String texto, String chave) throws Exception {
+        
+        Cipher cipher = Cipher.getInstance(TRANSFORMACAO);
+        SecretKeySpec secretKeySpec = new SecretKeySpec(chave.getBytes(), ALGORITMO);
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(chave.getBytes());
+        
+        cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivParameterSpec);
+        byte[] bytesCifrados = cipher.doFinal(texto.getBytes());
+
+        return Base64.getEncoder().encodeToString(bytesCifrados);
     }
 
-    public static String decifrar(String texto) {
-        return "foo";
+    public static String decifrar(String texto, String chave) throws Exception { 
+        
+        Cipher cipher = Cipher.getInstance(TRANSFORMACAO);
+        SecretKeySpec secretKeySpec = new SecretKeySpec(chave.getBytes(), ALGORITMO);
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(chave.getBytes());
+
+        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec);
+        byte[] bytesDecifrados = cipher.doFinal(Base64.getDecoder().decode(texto));
+
+        return new String(bytesDecifrados);
+
     }
 }
