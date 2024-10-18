@@ -8,9 +8,9 @@ import java.util.Scanner;
 public class Trabalho01 {
     public static void main(String[] args) {
         boolean loop = true;
+        Scanner scanner = new Scanner(System.in);
 
         while (loop) {
-            Scanner scanner = new Scanner(System.in);
 
             System.out.print("Quer cifrar (C) ou decifrar (D)? S para sair:");
             String opcao = scanner.next();
@@ -124,13 +124,16 @@ public class Trabalho01 {
             scanner.close();
 
         } 
+
+        scanner.close();
+
     }
 
     public static String cifrar(String texto) {
-        return null;
+        return "foo";
     }
 
     public static String decifrar(String texto) {
-        return null;
+        return "foo";
     }
 }
