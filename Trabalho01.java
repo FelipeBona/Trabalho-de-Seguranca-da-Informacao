@@ -97,14 +97,7 @@ public class Trabalho01 {
                     } else {
                         arquivoExiste = true;
                     }
-
-                    if (Files.exists(path)) {
-                        arquivoExiste = true;
-                    } else {
-                        System.out.println("Caminho não encontrado.");
-                        arquivoExiste = false;                       
-                    }
-
+                    
                 } while (!arquivoExiste);
 
                 try {
