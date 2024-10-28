@@ -1,195 +1,154 @@
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.Scanner;
-
 import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class Trabalho01 {
 
     private static final String ALGORITMO = "AES";
     private static final String TRANSFORMACAO = "AES/ECB/PKCS5Padding";
+
     public static void main(String[] args) throws Exception {
         boolean loop = true;
         Scanner scanner = new Scanner(System.in);
 
         while (loop) {
-
             System.out.print("Quer cifrar (C) ou decifrar (D)? S para sair: ");
             String opcao = scanner.next();
 
-            if (opcao.toLowerCase().equals("c")) {
-                boolean arquivoExiste = true;
+            if (opcao.equalsIgnoreCase("c")) {
                 File file;
-                
-                do {             
-                    System.out.print("Entre o caminho do arquivo que quer cifrar: ");            
+
+                do {
+                    System.out.print("Entre o caminho do arquivo que quer cifrar: ");
                     String caminhoDoArquivo = scanner.next();
                     file = new File(caminhoDoArquivo);
-    
-                    if (file.exists()) {
-                        arquivoExiste = true;
-                    } else {
+
+                    if (!file.exists()) {
                         System.out.println("ERRO: arquivo não encontrado.");
-                        arquivoExiste = false;                       
                     }
 
-                } while (!arquivoExiste);
+                } while (!file.exists());
 
                 System.out.print("Forneça a chave ou tecle G para gerar uma: ");
                 String chave = scanner.next();
 
-                if (chave.toLowerCase().equals("g")) {
+                if (chave.equalsIgnoreCase("g")) {
                     chave = gerarChaveAleatoria();
-                    System.out.println("A sua chave é " + chave + ". Anote-a para não esquecer.");
+                    System.out.println("A sua chave é: " + chave + ". Anote-a para não esquecer.");
                 }
 
-                String textoCifrado;
                 Path path;
+                String caminhoDoArquivoCifrado;
 
-                try {
-                    textoCifrado = cifrar(file.toString(), chave);
-                    arquivoExiste = true;
-                } catch (InvalidAlgorithmParameterException e) {
-                    throw new Exception("ERRO: a chave deve conter 16 bytes.");
-                }
+                do {
+                    System.out.print("Onde guardar o arquivo cifrado? ");
+                    caminhoDoArquivoCifrado = scanner.next();
+                    path = Paths.get(caminhoDoArquivoCifrado);
 
-                do {             
-                    System.out.print("Onde guardar o arquivo cifrado? ");            
-                    String caminhoDoArquivo = scanner.next();
-                    path = Paths.get(caminhoDoArquivo);
-
-                    if (Files.exists(path)) {
-                        arquivoExiste = true;
-                    } else {
-                        System.out.println("ERRO: caminho não encontrado.");
-                        arquivoExiste = false;                       
-                    }
-
-                } while (!arquivoExiste);
-
-                try {
-                    Files.write(path, textoCifrado.getBytes());
-                } catch (IOException e) {
-                    System.out.println(e.getMessage());
-                }
-
-                System.out.println("Pronto!");
-
-            } else if (opcao.toLowerCase().equals("d")) {
-                boolean arquivoExiste = true;
-                File file;
-                
-                do {             
-                    System.out.print("Entre o caminho do arquivo que quer decifrar: ");            
-                    String caminhoDoArquivo = scanner.next();
-                    file = new File(caminhoDoArquivo);
-    
-                    if (file.exists()) {
-                        arquivoExiste = true;
-                    } else {
-                        System.out.println("ERRO: arquivo não encontrado.");
-                        arquivoExiste = false;                       
-                    }
-
-                } while (!arquivoExiste);
-
-                System.out.print("Forneça a chave:");
-                String chave = scanner.next();
-                String textoDecifrado;
-                Path path;
-
-                try {
-                    textoDecifrado = decifrar(file.toString(), chave);
-                    arquivoExiste = true;
-                } catch (InvalidAlgorithmParameterException e) {
-                    throw new Exception("ERRO: a chave deve conter 16 bytes.");
-                }
-                
-                arquivoExiste = true;
-
-                do {             
-                    System.out.print("Onde guardar o arquivo decifrado? ");            
-                    String caminhoDoArquivo = scanner.next();
-                    path = Paths.get(caminhoDoArquivo);
-    
                     if (!Files.exists(path)) {
                         System.out.println("ERRO: caminho não encontrado.");
-                        arquivoExiste = false;
-                    } else {
-                        arquivoExiste = true;
                     }
 
-                } while (!arquivoExiste);
+                } while (!Files.exists(path));
 
-                try {
-                    Files.write(path, textoDecifrado.getBytes());
-                } catch (IOException e) {
-                    System.out.println(e.getMessage());
-                }
-
+                byte[] textoCifrado = cifrar(Files.readAllBytes(file.toPath()), chave);
+                Files.write(path, textoCifrado);
                 System.out.println("Pronto!");
 
-            } else if (opcao.toLowerCase().equals("s")) {
+            } else if (opcao.equalsIgnoreCase("d")) {
+                File file;
+                do {
+                    System.out.print("Entre o caminho do arquivo que quer decifrar: ");
+                    String caminhoDoArquivo = scanner.next();
+                    file = new File(caminhoDoArquivo);
+
+                    if (!file.exists()) {
+                        System.out.println("ERRO: arquivo não encontrado.");
+                    }
+
+                } while (!file.exists());
+
+                System.out.print("Forneça a chave: ");
+                String chave = scanner.next();
+
+                Path path;
+                String caminhoDoArquivoDecifrado;
+
+                do {
+                    System.out.print("Onde guardar o arquivo cifrado? ");
+                    caminhoDoArquivoDecifrado = scanner.next();
+                    path = Paths.get(caminhoDoArquivoDecifrado);
+
+                    if (!Files.exists(path)) {
+                        System.out.println("ERRO: caminho não encontrado.");
+                    }
+
+                } while (!Files.exists(path));
+
+                byte[] textoDecifrado = decifrar(Files.readAllBytes(file.toPath()), chave);
+                Files.write(path, textoDecifrado);
+                System.out.println("Pronto!");
+
+            } else if (opcao.equalsIgnoreCase("s")) {
                 loop = false;
 
             } else {
                 System.out.println("ERRO: opção inválida.");
-
             }
-
-        } 
+        }
 
         scanner.close();
 
     }
 
-    public static String cifrar(String texto, String chave) throws Exception {       
+    public static byte[] cifrar(byte[] dados, String chave) throws Exception {
         Cipher cipher = Cipher.getInstance(TRANSFORMACAO);
-        SecretKeySpec secretKeySpec = new SecretKeySpec(chave.getBytes(), ALGORITMO);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(chave.getBytes());
+        SecretKeySpec secretKeySpec = new SecretKeySpec(parseChave(chave), ALGORITMO);
+        cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
+
+        return cipher.doFinal(dados);
+
+    }
+
+    public static byte[] decifrar(byte[] dados, String chave) throws Exception {
+        Cipher cipher = Cipher.getInstance(TRANSFORMACAO);
+        SecretKeySpec secretKeySpec = new SecretKeySpec(parseChave(chave), ALGORITMO);
+        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
+
+        return cipher.doFinal(dados);
+
+    }
+
+    public static byte[] parseChave(String chave) throws Exception {
+        String[] byteValues = chave.split(",");
+        if (byteValues.length != 16) throw new Exception("A chave deve conter 16 bytes.");
+        byte[] chaveBytes = new byte[16];
+
+        for (int i = 0; i < 16; i++) {
+            chaveBytes[i] = (byte) Integer.parseInt(byteValues[i].trim());
+        }
+
+        return chaveBytes;
         
-        cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivParameterSpec);
-        byte[] bytesCifrados = cipher.doFinal(texto.getBytes());
-
-        return Base64.getEncoder().encodeToString(bytesCifrados);
-
     }
 
-    public static String decifrar(String texto, String chave) throws Exception {         
-        Cipher cipher = Cipher.getInstance(TRANSFORMACAO);
-        SecretKeySpec secretKeySpec = new SecretKeySpec(chave.getBytes(), ALGORITMO);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(chave.getBytes());
-
-        cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec);
-        byte[] bytesDecifrados = cipher.doFinal(Base64.getDecoder().decode(texto));
-
-        return new String(bytesDecifrados);
-
-    }
-
-
-    public static String gerarChaveAleatoria() {        
+    public static String gerarChaveAleatoria() {
         SecureRandom secureRandom = new SecureRandom();
         byte[] chave = new byte[16];
         secureRandom.nextBytes(chave);
+        StringBuilder chaveFormatada = new StringBuilder();
 
-        StringBuilder hexString = new StringBuilder();
-        for (byte b : chave) {
-            String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1) hexString.append('0');
-            hexString.append(hex);
+        for (int i = 0; i < chave.length; i++) {
+            chaveFormatada.append(chave[i] & 0xff);
+            if (i < chave.length - 1) chaveFormatada.append(",");
         }
 
-        return hexString.toString();
+        return chaveFormatada.toString();
 
     }
-
 }
