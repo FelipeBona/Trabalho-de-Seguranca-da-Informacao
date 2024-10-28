@@ -24,8 +24,8 @@ public class Trabalho01 {
                 File file;
 
                 do {
-                    System.out.print("Entre o caminho do arquivo que quer cifrar: ");
-                    String caminhoDoArquivo = scanner.next();
+                    System.out.print("Entre o caminho do arquivo que quer cifrar (a partir do diretório atual): ");
+                    String caminhoDoArquivo = System.getProperty("user.dir") + scanner.next();
                     file = new File(caminhoDoArquivo);
 
                     if (!file.exists()) {
@@ -46,8 +46,8 @@ public class Trabalho01 {
                 String caminhoDoArquivoCifrado;
 
                 do {
-                    System.out.print("Onde guardar o arquivo cifrado? ");
-                    caminhoDoArquivoCifrado = scanner.next();
+                    System.out.print("Onde guardar o arquivo cifrado (a partir do diretório atual)? ");
+                    caminhoDoArquivoCifrado = System.getProperty("user.dir") + scanner.next();
                     path = Paths.get(caminhoDoArquivoCifrado);
 
                     if (!Files.exists(path)) {
@@ -63,7 +63,7 @@ public class Trabalho01 {
             } else if (opcao.equalsIgnoreCase("d")) {
                 File file;
                 do {
-                    System.out.print("Entre o caminho do arquivo que quer decifrar: ");
+                    System.out.print("Entre o caminho do arquivo que quer decifrar (a partir do diretório atual): ");
                     String caminhoDoArquivo = scanner.next();
                     file = new File(caminhoDoArquivo);
 
@@ -80,8 +80,8 @@ public class Trabalho01 {
                 String caminhoDoArquivoDecifrado;
 
                 do {
-                    System.out.print("Onde guardar o arquivo cifrado? ");
-                    caminhoDoArquivoDecifrado = scanner.next();
+                    System.out.print("Onde guardar o arquivo cifrado (a partir do diretório atual)? ");
+                    caminhoDoArquivoDecifrado = System.getProperty("user.dir") + scanner.next();
                     path = Paths.get(caminhoDoArquivoDecifrado);
 
                     if (!Files.exists(path)) {
