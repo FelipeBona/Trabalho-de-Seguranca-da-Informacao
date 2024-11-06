@@ -137,29 +137,30 @@ public class Trabalho01 {
         for (int i = 0; i < 16; i++) {
             estado[i] = dados[i] & 0xFF;
         }
-
+   
         int[] chaveExpandida = expandirChave(chave);
-
-        estado = addRoundKey(estado, Arrays.copyOfRange(chaveExpandida, 160, 176));
-        estado = rotacionarBytes(estado);
-        estado = subBytes(estado);
-
+   
+        estado = addRoundKey(estado, Arrays.copyOfRange(chaveExpandida, 160, 176)); 
+        estado = rotacionarBytes(estado);  
+        estado = invSubBytes(estado);     
+   
         for (int round = 9; round >= 1; round--) {
-            estado = addRoundKey(estado, Arrays.copyOfRange(chaveExpandida, round * 16, (round + 1) * 16));
-            estado = misturarColunas(estado);
+            estado = addRoundKey(estado, Arrays.copyOfRange(chaveExpandida, round * 16, (round + 1) * 16)); 
+            estado = invMixColumns(estado);   
             estado = rotacionarBytes(estado);
-            estado = subBytes(estado);
+            estado = invSubBytes(estado);   
         }
-
-        estado = addRoundKey(estado, Arrays.copyOfRange(chaveExpandida, 0, 16));
-
+   
+        estado = addRoundKey(estado, Arrays.copyOfRange(chaveExpandida, 0, 16)); 
+   
         byte[] textoSimples = new byte[16];
         for (int i = 0; i < 16; i++) {
             textoSimples[i] = (byte) estado[i];
         }
-
+   
         return textoSimples;
     }
+   
 
     private static int[] expandirChave(String chave) throws Exception {
         byte[] chaveBytes = parseChave(chave);
@@ -309,4 +310,60 @@ public class Trabalho01 {
         int padding = dados[dados.length - 1];
         return Arrays.copyOf(dados, dados.length - padding);
     }
+
+    private static int[] invSubBytes(int[] estado) {
+        for (int i = 0; i < estado.length; i++) {
+            estado[i] = SBOX_INV[estado[i] & 0xFF];
+        }
+        return estado;
+    }
+    
+    private static int[] invShiftRows(int[] estado) {
+        int[] temp = estado.clone();
+        temp[1] = estado[5];
+        temp[5] = estado[9];
+        temp[9] = estado[13];
+        temp[13] = estado[1];
+    
+        temp[2] = estado[10];
+        temp[6] = estado[14];
+        temp[10] = estado[2];
+        temp[14] = estado[6];
+    
+        temp[3] = estado[15];
+        temp[7] = estado[11];
+        temp[11] = estado[7];
+        temp[15] = estado[3];
+    
+        return temp;
+    }
+    
+    private static int[] invMixColumns(int[] estado) {
+        int[] resultado = new int[16];
+        for (int i = 0; i < 4; i++) {
+            int a = estado[i];
+            int b = estado[4 + i];
+            int c = estado[8 + i];
+            int d = estado[12 + i];
+    
+            resultado[i] = galoisMult(a, 14) ^ galoisMult(b, 11) ^ galoisMult(c, 13) ^ galoisMult(d, 9);
+            resultado[4 + i] = galoisMult(a, 9) ^ galoisMult(b, 14) ^ galoisMult(c, 11) ^ galoisMult(d, 13);
+            resultado[8 + i] = galoisMult(a, 13) ^ galoisMult(b, 9) ^ galoisMult(c, 14) ^ galoisMult(d, 11);
+            resultado[12 + i] = galoisMult(a, 11) ^ galoisMult(b, 13) ^ galoisMult(c, 9) ^ galoisMult(d, 14);
+        }
+        return resultado;
+    }
+    
+    private static final int[] SBOX_INV = {
+        0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
+        0x7C, 0x7B, 0xF2, 0xC3, 0x2C, 0x9B, 0x7F, 0x8C, 0x3D, 0x64, 0x5D, 0x19, 0x73, 0x60, 0x81, 0x4F,
+        0xDC, 0x22, 0x2A, 0x90, 0x88, 0x46, 0xEE, 0xB8, 0x14, 0xDE, 0x5E, 0x0B, 0xDB, 0xE0, 0x32, 0x3A,
+        0x0A, 0x49, 0x06, 0x24, 0x5C, 0xC2, 0xD3, 0xAC, 0x62, 0x91, 0x95, 0xE4, 0x79, 0xE7, 0xC8, 0x37,
+        0x6D, 0x8D, 0xD5, 0x4E, 0xA9, 0x6C, 0x56, 0xF4, 0xEA, 0x65, 0x7A, 0xAE, 0x08, 0xBA, 0x78, 0x25,
+        0x2E, 0x1C, 0xA6, 0xB4, 0xC6, 0xE8, 0xDD, 0x74, 0x1F, 0x4B, 0xBD, 0x8B, 0x8A, 0x70, 0x3E, 0xB5,
+        0x66, 0x48, 0x03, 0xF6, 0x0E, 0x61, 0x35, 0x57, 0xB9, 0x86, 0xC1, 0x1D, 0x9E, 0xE1, 0xF8, 0x98,
+        0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF, 0x8C, 0xA1, 0x89,
+        0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
+    };
+    
 }
