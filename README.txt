@@ -9,6 +9,6 @@ partir do diretório raiz;
 2. O programa não é capaz de criar arquivos, sendo necessário que os arquivos usados já
 tenham sido criados.
 
-Link para o repositório:  https://github.com/joao-martinho/Trabalho-de-Seguranca-da-Informacao
+Link para o repositório: https://github.com/joao-martinho/Trabalho-de-Seguranca-da-Informacao
 
 Obrigado.

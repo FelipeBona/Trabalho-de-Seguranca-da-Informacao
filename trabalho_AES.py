@@ -62,10 +62,20 @@ def expandir_chave(chave):
     return [chave_expandida[i:i + 4] for i in range(0, len(chave_expandida), 4)]
 
 def sub_bytes(estado):
+    for i, row in enumerate(estado):
+        for j, byte in enumerate(row):
+            if not (0 <= byte <= 255):
+                estado[i][j] = 0  
     return [[S_BOX[byte >> 4][byte & 0x0F] for byte in row] for row in estado]
 
+
 def inv_sub_bytes(estado):
+    for i, row in enumerate(estado):
+        for j, byte in enumerate(row):
+            if not (0 <= byte <= 255):
+                estado[i][j] = 0 
     return [[INV_S_BOX[byte >> 4][byte & 0x0F] for byte in row] for row in estado]
+
 
 def shift_rows(estado):
     return [estado[0], estado[1][1:] + estado[1][:1], estado[2][2:] + estado[2][:2], estado[3][3:] + estado[3][:3]]
@@ -104,7 +114,6 @@ def inv_misturar_colunas(estado):
 def add_round_key(estado, round_chave):
     return [[byte ^ round_chave[i][j] for j, byte in enumerate(row)] for i, row in enumerate(estado)]
 
-# Funções de criptografia e descriptografia
 def cifrar_bloco(bloco, chave_expandida):
     estado = [list(bloco[i:i + 4]) for i in range(0, 16, 4)]
     estado = add_round_key(estado, chave_expandida[0])
@@ -144,10 +153,12 @@ def applicar_padding(dados):
 def remover_padding(dados):
     padding_length = dados[-1]
 
-    if padding_length > 16:
-        raise ValueError("Padding inválido.")
-    
+    if padding_length < 1 or padding_length > 16:
+        return dados 
+
     return dados[:-padding_length]
+
+
 
 def cifrar(caminho_da_entrada, caminho_da_saida, chave):
     with open(caminho_da_entrada, 'rb') as arquivo_de_entrada:
@@ -207,5 +218,5 @@ def main():
     else:
         print("Operação inválida.")
 
-if __name__ == "_main_":
+if __name__ == "__main__":
     main()
