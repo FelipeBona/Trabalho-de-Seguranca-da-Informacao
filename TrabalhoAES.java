@@ -59,7 +59,7 @@ public class TrabalhoAES {
 
                 } while (!Files.exists(path));
 
-                byte[] textoCifrado = cifrar(addPadding(Files.readAllBytes(file.toPath())), chave);
+                byte[] textoCifrado = cifrar(gerarPadding(Files.readAllBytes(file.toPath())), chave);
                 Files.write(path, textoCifrado);
                 System.out.println("Pronto!");
 
@@ -94,7 +94,8 @@ public class TrabalhoAES {
                 } while (!Files.exists(path));
 
                 byte[] textoDecifrado = decifrar(Files.readAllBytes(file.toPath()), chave);
-                Files.write(path, removePadding(textoDecifrado));
+                Files.write(path, removerPadding
+        (textoDecifrado));
                 System.out.println("Pronto!");
 
             } else if (opcao.equalsIgnoreCase("s")) {
@@ -179,7 +180,7 @@ public class TrabalhoAES {
             int temp = chaveExpandida[i - 1];
 
             if (i % 4 == 0) {
-                temp = subWord(rotpalavra(temp)) ^ RCON[i / 4 - 1];
+                temp = subPalavra(rotacionarPalavra(temp)) ^ RCON[i / 4 - 1];
             }
 
             chaveExpandida[i] = chaveExpandida[i - 4] ^ temp;
@@ -188,14 +189,14 @@ public class TrabalhoAES {
         return chaveExpandida;
     }
 
-    private static int subWord(int palavra) {
+    private static int subPalavra(int palavra) {
         return (SBOX[(palavra >> 24) & 0xFF] << 24) |
                (SBOX[(palavra >> 16) & 0xFF] << 16) |
                (SBOX[(palavra >> 8) & 0xFF] << 8) |
                (SBOX[palavra & 0xFF]);
     }
 
-    private static int rotpalavra(int palavra) {
+    private static int rotacionarPalavra(int palavra) {
         return ((palavra << 8) & 0xFFFFFF00) | ((palavra >> 24) & 0xFF);
     }
 
@@ -203,6 +204,7 @@ public class TrabalhoAES {
         for (int i = 0; i < estado.length; i++) {
             estado[i] ^= roundKey[i];
         }
+        
         return estado;
     }
 
@@ -210,6 +212,7 @@ public class TrabalhoAES {
         for (int i = 0; i < estado.length; i++) {
             estado[i] = SBOX[estado[i] & 0xFF];
         }
+
         return estado;
     }
 
@@ -218,45 +221,54 @@ public class TrabalhoAES {
         for (int i = 0; i < 16; i++) {
             novoEstado[i] = estado[(i + 1) % 16];
         }
+
         return novoEstado;
     }
 
-    private static byte[] addPadding(byte[] dados) {
+    private static byte[] gerarPadding(byte[] dados) {
         int padding = 16 - (dados.length % 16);
         byte[] resultado = new byte[dados.length + padding];
         System.arraycopy(dados, 0, resultado, 0, dados.length);
+
         for (int i = dados.length; i < resultado.length; i++) {
             resultado[i] = (byte) padding;
         }
+
         return resultado;
     }
 
-    private static byte[] removePadding(byte[] dados) {
+    private static byte[] removerPadding(byte[] dados) {
         int padding = dados[dados.length - 1];
         byte[] resultado = new byte[dados.length - padding];
         System.arraycopy(dados, 0, resultado, 0, dados.length - padding);
+
         return resultado;
     }
 
     public static String gerarChaveAleatoria() {
         SecureRandom rand = new SecureRandom();
         StringBuilder chave = new StringBuilder();
+
         for (int i = 0; i < 16; i++) {
             if (i > 0) chave.append(",");
             chave.append(rand.nextInt(256));
         }
+
         return chave.toString();
     }
 
     public static byte[] parseChave(String chave) throws Exception {
         String[] strings = chave.split(",");
+
         if (strings.length != 16) {
             throw new Exception("A chave deve conter 16 bytes.");
         }
+
         byte[] chaveBytes = new byte[16];
         for (int i = 0; i < 16; i++) {
             chaveBytes[i] = (byte) Integer.parseInt(strings[i].trim());
         }
+
         return chaveBytes;
     }
 }
