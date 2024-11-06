@@ -6,8 +6,6 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Scanner;
 
-import javax.crypto.Cipher;
-
 public class TrabalhoAES {
 
     private static final int[] SBOX = {
@@ -123,7 +121,6 @@ public class TrabalhoAES {
         for (int round = 1; round <= 9; round++) {
             estado = subBytes(estado);
             estado = rotacionarBytes(estado);
-            estado = misturarColunas(estado);
             estado = addRoundKey(estado, Arrays.copyOfRange(chaveExpandida, round * 4, (round + 1) * 4));
         }
 
@@ -153,7 +150,6 @@ public class TrabalhoAES {
 
         for (int round = 9; round >= 1; round--) {
             estado = addRoundKey(estado, Arrays.copyOfRange(chaveExpandida, round * 4, (round + 1) * 4));
-            estado = misturarColunas(estado);
             estado = rotacionarBytes(estado);
             estado = subBytes(estado);
         }
@@ -172,7 +168,6 @@ public class TrabalhoAES {
         byte[] chaveBytes = parseChave(chave);
         int[] chaveExpandida = new int[44];
 
-        // Primeiro, preenchendo as primeiras 4 palavras da chave expandida
         for (int i = 0; i < 4; i++) {
             chaveExpandida[i] = ((chaveBytes[i * 4] & 0xFF) << 24) |
                                ((chaveBytes[i * 4 + 1] & 0xFF) << 16) |
@@ -180,7 +175,6 @@ public class TrabalhoAES {
                                (chaveBytes[i * 4 + 3] & 0xFF);
         }
 
-        // Expansão das palavras subsequentes
         for (int i = 4; i < 44; i++) {
             int temp = chaveExpandida[i - 1];
 
@@ -225,11 +219,6 @@ public class TrabalhoAES {
             novoEstado[i] = estado[(i + 1) % 16];
         }
         return novoEstado;
-    }
-
-    private static int[] misturarColunas(int[] estado) {
-        // A mistura das colunas é feita em AES, mas vou simplificar aqui para exemplificar
-        return estado;
     }
 
     private static byte[] addPadding(byte[] dados) {
