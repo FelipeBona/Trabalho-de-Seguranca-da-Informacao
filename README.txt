@@ -10,7 +10,5 @@ não aceita "arquivo.txt" se este arquivo está no diretório atual, sendo neces
 "./arquivo.txt".
 2. O programa não é capaz de criar arquivos, sendo necessário que os arquivos usados já
 tenham sido criados.
-3. Caso seja útil, este é o link do repositório público que usamos para desenvolver este
-trabalho: https://github.com/joao-martinho/Trabalho-de-Seguranca-da-Informacao
 
 Obrigado.
