@@ -13,8 +13,18 @@ public class TrabalhoAES {
     };
 
     private static final int[] RCON = {
-        0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000, 0x20000000, 0x40000000, 0x80000000, 0x1b000000, 0x36000000
-    };
+        0x01000000, // RCON[0]
+        0x02000000, // RCON[1]
+        0x04000000, // RCON[2]
+        0x08000000, // RCON[3]
+        0x10000000, // RCON[4]
+        0x20000000, // RCON[5]
+        0x40000000, // RCON[6]
+        0x80000000, // RCON[7]
+        0x1B000000, // RCON[8]
+        0x36000000, // RCON[9]
+        0x6C000000  // RCON[10]
+    }; 
 
     public static void main(String[] args) throws Exception {
         boolean loop = true;
@@ -94,8 +104,7 @@ public class TrabalhoAES {
                 } while (!Files.exists(path));
 
                 byte[] textoDecifrado = decifrar(Files.readAllBytes(file.toPath()), chave);
-                Files.write(path, removerPadding
-        (textoDecifrado));
+                Files.write(path, removerPadding(textoDecifrado));
                 System.out.println("Pronto!");
 
             } else if (opcao.equalsIgnoreCase("s")) {
@@ -171,20 +180,20 @@ public class TrabalhoAES {
 
         for (int i = 0; i < 4; i++) {
             chaveExpandida[i] = ((chaveBytes[i * 4] & 0xFF) << 24) |
-                               ((chaveBytes[i * 4 + 1] & 0xFF) << 16) |
-                               ((chaveBytes[i * 4 + 2] & 0xFF) << 8) |
-                               (chaveBytes[i * 4 + 3] & 0xFF);
+                                ((chaveBytes[i * 4 + 1] & 0xFF) << 16) |
+                                ((chaveBytes[i * 4 + 2] & 0xFF) << 8) |
+                                (chaveBytes[i * 4 + 3] & 0xFF);
         }
 
         for (int i = 4; i < 44; i++) {
             int temp = chaveExpandida[i - 1];
-
+        
             if (i % 4 == 0) {
                 temp = subPalavra(rotacionarPalavra(temp)) ^ RCON[i / 4 - 1];
             }
-
+        
             chaveExpandida[i] = chaveExpandida[i - 4] ^ temp;
-        }
+        }        
 
         return chaveExpandida;
     }
@@ -204,7 +213,7 @@ public class TrabalhoAES {
         for (int i = 0; i < estado.length; i++) {
             estado[i] ^= roundKey[i];
         }
-        
+
         return estado;
     }
 

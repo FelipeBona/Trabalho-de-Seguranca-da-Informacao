@@ -25,7 +25,7 @@ public class TrabalhoAESComBiblioteca {
 
                 do {
                     System.out.print("Entre o caminho do arquivo que quer cifrar: ");
-                    String caminhoDoArquivo = scanner.next();
+                    String caminhoDoArquivo = System.getProperty("user.dir") + scanner.next();
                     file = new File(caminhoDoArquivo);
 
                     if (!file.exists()) {
@@ -47,7 +47,7 @@ public class TrabalhoAESComBiblioteca {
 
                 do {
                     System.out.print("Onde guardar o arquivo cifrado? ");
-                    caminhoDoArquivoCifrado = scanner.next();
+                    caminhoDoArquivoCifrado = System.getProperty("user.dir") + scanner.next();
                     path = Paths.get(caminhoDoArquivoCifrado);
 
                     if (!Files.exists(path)) {
@@ -64,7 +64,7 @@ public class TrabalhoAESComBiblioteca {
                 File file;
                 do {
                     System.out.print("Entre o caminho do arquivo que quer decifrar: ");
-                    String caminhoDoArquivo = scanner.next();
+                    String caminhoDoArquivo = System.getProperty("user.dir") + scanner.next();
                     file = new File(caminhoDoArquivo);
 
                     if (!file.exists()) {
@@ -81,7 +81,7 @@ public class TrabalhoAESComBiblioteca {
 
                 do {
                     System.out.print("Onde guardar o arquivo cifrado? ");
-                    caminhoDoArquivoDecifrado = scanner.next();
+                    caminhoDoArquivoDecifrado = System.getProperty("user.dir") + scanner.next();
                     path = Paths.get(caminhoDoArquivoDecifrado);
 
                     if (!Files.exists(path)) {
