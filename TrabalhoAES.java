@@ -3,6 +3,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class AES {
@@ -60,6 +61,8 @@ public class AES {
             { (byte) 0xA0, (byte) 0xE0, (byte) 0x3B, (byte) 0x4D, (byte) 0xAE, (byte) 0x2A, (byte) 0xF5, (byte) 0xB0, (byte) 0xC8, (byte) 0xEB, (byte) 0xBB, (byte) 0x3C, (byte) 0x83, (byte) 0x53, (byte) 0x99, (byte) 0x61 },
             { (byte) 0x17, (byte) 0x2B, (byte) 0x04, (byte) 0x7E, (byte) 0xBA, (byte) 0x77, (byte) 0xD6, (byte) 0x26, (byte) 0xE1, (byte) 0x69, (byte) 0x14, (byte) 0x63, (byte) 0x55, (byte) 0x21, (byte) 0x0C, (byte) 0x7D },
     };
+
+    private static int padding;
 
     public static void main(String[] args) throws Exception {
         boolean loop = true;
@@ -155,45 +158,61 @@ public class AES {
     }
 
     private static byte[] decifrar(byte[] textoCifrado, byte[] chave) {
+        int numBlocos = textoCifrado.length / 16;
+        byte[] resultadoFinal = new byte[textoCifrado.length];
+
         byte[][] matrizDeEstado = gerarMatrizDeEstado(chave);
         byte[][] roundKeys = gerarRoundKeys(matrizDeEstado);
-        byte[][] temp = new byte[4][4];
+        roundKeys = expandirChave(roundKeys);
 
-        for (int j = 0; j < 4; j++) {
-            for (int k = 0; k < 4; k++) {
-                temp[j][k] = roundKeys[10][k];
-            }
-        }
+        for (int blocoIdx = 0; blocoIdx < numBlocos; blocoIdx++) {
+            byte[] bloco = Arrays.copyOfRange(textoCifrado, blocoIdx * 16, (blocoIdx + 1) * 16);
+            byte[][] temp = new byte[4][4];
 
-        byte[][] resultado = addRoundKey01(textoCifrado, temp);
-        resultado = inverterShiftRows(resultado);
-        resultado = inverterSubstituirPalavras(resultado);
-
-        for (int i = 9; i > 0; i--) {
-
-            for (int j = 0; j < 4; j++) {
-                for (int k = 0; k < 4; k++) {
-                    temp[j][k] = roundKeys[i * 4 + j][k];
+            byte[][] estado = new byte[4][4];
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                    estado[i][j] = bloco[i + (j * 4)];
                 }
             }
 
-            resultado = addRoundKey02(resultado, temp);
-            resultado = inverterShiftRows(resultado);
-            resultado = inverterSubstituirPalavras(resultado);
-
-        }
-
-        for (int j = 0; j < 4; j++) {
-            for (int k = 0; k < 4; k++) {
-                temp[j][k] = roundKeys[0][k];
+            for (int j = 0; j < 4; j++) {
+                for (int k = 0; k < 4; k++) {
+                    temp[j][k] = roundKeys[10][k];
+                }
             }
+
+            estado = addRoundKey(estado, temp);
+            estado = inverterShiftRows(estado);
+            estado = inverterSubstituirPalavras(estado);
+
+            for (int i = 9; i > 0; i--) {
+                for (int j = 0; j < 4; j++) {
+                    for (int k = 0; k < 4; k++) {
+                        temp[j][k] = roundKeys[i * 4 + j][k];
+                    }
+                }
+
+                estado = addRoundKey(estado, temp);
+                estado = inverterShiftRows(estado);
+                estado = inverterSubstituirPalavras(estado);
+            }
+
+            for (int j = 0; j < 4; j++) {
+                for (int k = 0; k < 4; k++) {
+                    temp[j][k] = roundKeys[0][k];
+                }
+            }
+
+            estado = addRoundKey(estado, temp);
+
+            byte[] blocoDecifrado = flattenByteMatrix(estado);
+            System.arraycopy(blocoDecifrado, 0, resultadoFinal, blocoIdx * 16, 16);
         }
-
-        resultado = addRoundKey02(resultado, temp);
-
-        return flattenByteMatrix(resultado);
-
+        
+        return resultadoFinal;
     }
+
 
     private static byte[][] inverterShiftRows(byte[][] estado) {
         byte[][] novoEstado = new byte[4][4];
@@ -242,50 +261,60 @@ public class AES {
         return novoEstado;
     }
 
-
-
     private static byte[] cifrar(byte[] textoSimples, byte[] chave) {
         textoSimples = aplicarPadding(textoSimples);
+
+        int numBlocos = textoSimples.length / 16;
+        byte[] resultadoFinal = new byte[textoSimples.length];
+
         byte[][] matrizDeEstado = gerarMatrizDeEstado(chave);
         byte[][] roundKeys = gerarRoundKeys(matrizDeEstado);
         roundKeys = expandirChave(roundKeys);
-        byte[][] temp = new byte[4][4];
 
-        for (int j = 0; j < 4; j++) {
-            for (int k = 0; k < 4; k++) {
-                temp[j][k] = roundKeys[0][k];
-            }
-        }
+        for (int blocoIdx = 0; blocoIdx < numBlocos; blocoIdx++) {
+            byte[] bloco = Arrays.copyOfRange(textoSimples, blocoIdx * 16, (blocoIdx + 1) * 16);
+            byte[][] temp = new byte[4][4];
 
-        byte[][] resultado = addRoundKey01(textoSimples, roundKeys);
-
-
-        for (int i = 1; i < 10; i++) {
-            resultado = substituirPalavra02(resultado);
-            resultado = shiftRows(resultado);
-            resultado = mixColumns(resultado);
-
-            for (int j = 0; j < 4; j++) {
-                for (int k = 0; k < 4; k++) {
-                    temp[j][k] = roundKeys[i * 4 + j][k];
+            byte[][] estado = new byte[4][4];
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                    estado[i][j] = bloco[i + (j * 4)];
                 }
             }
 
-            resultado = addRoundKey02(resultado, temp);
-        }
+            estado = addRoundKey(estado, roundKeys);
 
-        for (int j = 0; j < 4; j++) {
-            for (int k = 0; k < 4; k++) {
-                temp[j][k] = roundKeys[10][k];
+            for (int i = 1; i < 10; i++) {
+                estado = substituirPalavra02(estado);
+                estado = shiftRows(estado);
+                estado = mixColumns(estado);
+
+                for (int j = 0; j < 4; j++) {
+                    for (int k = 0; k < 4; k++) {
+                        temp[j][k] = roundKeys[i * 4 + j][k];
+                    }
+                }
+
+                estado = addRoundKey(estado, temp);
             }
+
+            for (int j = 0; j < 4; j++) {
+                for (int k = 0; k < 4; k++) {
+                    temp[j][k] = roundKeys[10][k];
+                }
+            }
+
+            estado = substituirPalavra02(estado);
+            estado = addRoundKey(estado, temp);
+
+            byte[] blocoCifrado = flattenByteMatrix(estado);
+            System.arraycopy(blocoCifrado, 0, resultadoFinal, blocoIdx * 16, 16);
         }
 
-        resultado = substituirPalavra02(resultado);
-        resultado = addRoundKey02(resultado, temp);
-
-
-        return flattenByteMatrix(resultado);
+        resultadoFinal[resultadoFinal.length - 1] = (byte) padding;
+        return resultadoFinal;
     }
+
 
     private static byte[] flattenByteMatrix(byte[][] byteMatrix) {
         int rows = byteMatrix.length;
@@ -356,33 +385,21 @@ public class AES {
         return matrizDeEstado;
     }
 
-    private static byte[][] addRoundKey01(byte[] textoSimples, byte[][] roundKeys) {
-        byte[][] resultado = new byte[4][4];
+    public static byte[][] addRoundKey(byte[][] estado, byte[][] roundKey) {
+        byte[][] novoEstado = new byte[4][4];
 
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                resultado[i][j] = (byte) (textoSimples[i * 4 + j] ^ roundKeys[i][j]);
+                novoEstado[i][j] = (byte) (estado[i][j] ^ roundKey[i][j]);
             }
         }
 
-        return resultado;
-    }
-
-    private static byte[][] addRoundKey02(byte[][] textoSimples, byte[][] roundKeys) {
-        byte[][] resultado = new byte[4][4];
-
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                resultado[i][j] = (byte) (textoSimples[i][j] ^ roundKeys[i][j]);
-            }
-        }
-
-        return resultado;
+        return novoEstado;
     }
 
     private static byte[] aplicarPadding(byte[] textoSimples) {
         int tamanho = textoSimples.length;
-        int padding = 16 - (tamanho % 16);
+        padding = 16 - (tamanho % 16);
 
         if (padding == 0) {
             padding = 16;
@@ -397,20 +414,7 @@ public class AES {
 
         return paddedBytes;
     }
-
-
-    private static byte[][] byteArrayTo4x4Matrix(byte[] byteArray) {
-        byte[][] matrix = new byte[4][4];
-
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                matrix[i][j] = byteArray[i * 4 + j];
-            }
-        }
-
-        return matrix;
-    }
-
+    
     private static byte[][] gerarMatrizDeEstado(byte[] chave) {
         byte[][] matrizDeEstado = new byte[4][4];
         int contador = 0;
@@ -574,17 +578,15 @@ public class AES {
         return palavra;
     }
 
+    public static byte[] parseChave(String chave) {
+        String[] stringArray = chave.split(",");
 
-    private static byte[] parseChave(String chave) throws Exception {
-        String[] byteValues = chave.split(",");
-        if (byteValues.length != 16) throw new Exception("A chave deve conter 16 bytes.");
-        byte[] chaveBytes = new byte[16];
+        byte[] bytes = new byte[stringArray.length];
 
-        for (int i = 0; i < 16; i++) {
-            chaveBytes[i] = (byte) Integer.parseInt(byteValues[i].trim());
+        for (int i = 0; i < stringArray.length; i++) {
+            bytes[i] = (byte) Integer.parseInt(stringArray[i]);
         }
-
-        return chaveBytes;
+        return bytes;
     }
 
     private static String gerarChaveAleatoria() {
