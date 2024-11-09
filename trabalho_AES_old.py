@@ -44,7 +44,6 @@ R_CON = [
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36
 ]
 
-
 def expandir_chave(chave):
     chave_expandida = [chave[i:i + 4] for i in range(0, len(chave), 4)]
 
@@ -62,34 +61,19 @@ def expandir_chave(chave):
 
     return [chave_expandida[i:i + 4] for i in range(0, len(chave_expandida), 4)]
 
-
 def sub_bytes(estado):
     for i, row in enumerate(estado):
         for j, byte in enumerate(row):
             if not (0 <= byte <= 255):
-                estado[i][j] = 0
+                estado[i][j] = 0  
     return [[S_BOX[byte >> 4][byte & 0x0F] for byte in row] for row in estado]
-
-
-def inv_sub_bytes(estado):
-    for i, row in enumerate(estado):
-        for j, byte in enumerate(row):
-            if not (0 <= byte <= 255):
-                estado[i][j] = 0
-    return [[INV_S_BOX[byte >> 4][byte & 0x0F] for byte in row] for row in estado]
-
 
 def shift_rows(estado):
     return [estado[0], estado[1][1:] + estado[1][:1], estado[2][2:] + estado[2][:2], estado[3][3:] + estado[3][:3]]
 
-
-def inv_shift_rows(estado):
-    return [estado[0], estado[1][-1:] + estado[1][:-1], estado[2][-2:] + estado[2][:-2],
-            estado[3][-3:] + estado[3][:-3]]
-
-
 def misturar_colunas(estado):
     def misturar_coluna(col):
+
         a = [byte for byte in col]
         b = [(byte << 1) ^ (0x1b if byte & 0x80 else 0x00) for byte in col]
 
@@ -99,26 +83,11 @@ def misturar_colunas(estado):
             b[2] ^ a[1] ^ a[0] ^ b[3] ^ a[3],
             b[3] ^ a[2] ^ a[1] ^ b[0] ^ a[0],
         ]
-
+    
     return [misturar_coluna(col) for col in zip(*estado)]
-
-
-def inv_misturar_colunas(estado):
-    def inv_misturar_coluna(col):
-        a = [byte for byte in col]
-        return [
-            (a[0] * 0x0e) ^ (a[1] * 0x0b) ^ (a[2] * 0x0d) ^ (a[3] * 0x09),
-            (a[0] * 0x09) ^ (a[1] * 0x0e) ^ (a[2] * 0x0b) ^ (a[3] * 0x0d),
-            (a[0] * 0x0d) ^ (a[1] * 0x09) ^ (a[2] * 0x0e) ^ (a[3] * 0x0b),
-            (a[0] * 0x0b) ^ (a[1] * 0x0d) ^ (a[2] * 0x09) ^ (a[3] * 0x0e),
-        ]
-
-    return [inv_misturar_coluna(col) for col in zip(*estado)]
-
 
 def add_round_key(estado, round_chave):
     return [[byte ^ round_chave[i][j] for j, byte in enumerate(row)] for i, row in enumerate(estado)]
-
 
 def cifrar_bloco(bloco, chave_expandida):
     estado = [list(bloco[i:i + 4]) for i in range(0, 16, 4)]
@@ -136,6 +105,53 @@ def cifrar_bloco(bloco, chave_expandida):
 
     return bytes(sum(estado, []))
 
+def applicar_padding(dados):
+    padding_length = 16 - (len(dados) % 16)
+    return dados + bytes([padding_length] * padding_length)
+
+
+
+def cifrar(caminho_da_entrada, caminho_da_saida, chave):
+    with open(caminho_da_entrada, 'rb') as arquivo_de_entrada:
+        dados = arquivo_de_entrada.read()
+    dados_com_padding = applicar_padding(dados)
+    chave_expandida = expandir_chave(chave) 
+
+    with open(caminho_da_saida, 'wb') as arquivo_de_saida:
+        for i in range(0, len(dados_com_padding), 16):
+            bloco = dados_com_padding[i:i+16]
+            bloco_cifrado = cifrar_bloco(bloco, chave_expandida)
+            arquivo_de_saida.write(bloco_cifrado)
+
+def inv_sub_bytes(estado):
+    for i, row in enumerate(estado):
+        for j, byte in enumerate(row):
+            if not (0 <= byte <= 255):
+                estado[i][j] = 0 
+    return [[INV_S_BOX[byte >> 4][byte & 0x0F] for byte in row] for row in estado]
+
+def inv_shift_rows(estado):
+    return [estado[0], estado[1][-1:] + estado[1][:-1], estado[2][-2:] + estado[2][:-2], estado[3][-3:] + estado[3][:-3]]
+
+def inv_misturar_colunas(estado):
+    def inv_misturar_coluna(col):
+        a = [byte for byte in col]
+        b = [(byte << 1) ^ (0x1b if byte & 0x80 else 0x00) for byte in col]
+        c = [(b[i] << 1) ^ (0x1b if b[i] & 0x80 else 0x00) for i in range(4)]
+        d = [(c[i] << 1) ^ (0x1b if c[i] & 0x80 else 0x00) for i in range(4)]
+        
+        return [
+            d[0] ^ c[0] ^ b[0] ^ a[0] ^ d[1] ^ b[1] ^ a[1] ^ d[3] ^ c[3] ^ a[3],
+            d[1] ^ c[1] ^ b[1] ^ a[1] ^ d[2] ^ b[2] ^ a[2] ^ d[0] ^ c[0] ^ a[0],
+            d[2] ^ c[2] ^ b[2] ^ a[2] ^ d[3] ^ b[3] ^ a[3] ^ d[1] ^ c[1] ^ a[1],
+            d[3] ^ c[3] ^ b[3] ^ a[3] ^ d[0] ^ b[0] ^ a[0] ^ d[2] ^ c[2] ^ a[2]
+        ]
+
+    return [inv_misturar_coluna(col) for col in zip(*estado)]
+
+def remover_padding(dados):
+    padding_length = dados[-1]
+    return dados[:-padding_length] if padding_length <= 16 else dados
 
 def decifrar_bloco(bloco, chave_expandida):
     estado = [list(bloco[i:i + 4]) for i in range(0, 16, 4)]
@@ -153,52 +169,21 @@ def decifrar_bloco(bloco, chave_expandida):
 
     return bytes(sum(estado, []))
 
-
-def applicar_padding(dados):
-    padding_length = 16 - (len(dados) % 16)
-    return dados + bytes([padding_length] * padding_length)
-
-
-def remover_padding(dados):
-    padding_length = dados[-1]
-
-    if padding_length < 1 or padding_length > 16:
-        return dados
-
-    return dados[:-padding_length]
-
-
-def cifrar(caminho_da_entrada, caminho_da_saida, chave):
-    with open(caminho_da_entrada, 'rb') as arquivo_de_entrada:
-        dados = arquivo_de_entrada.read()
-    dados_com_padding = applicar_padding(dados)
-    chave_expandida = expandir_chave(chave)
-
-    with open(caminho_da_saida, 'wb') as arquivo_de_saida:
-        for i in range(0, len(dados_com_padding), 16):
-            bloco = dados_com_padding[i:i + 16]
-            bloco_cifrado = cifrar_bloco(bloco, chave_expandida)
-            arquivo_de_saida.write(bloco_cifrado)
-
-
 def decifrar(caminho_da_entrada, caminho_da_saida, chave):
     with open(caminho_da_entrada, 'rb') as arquivo_de_entrada:
         dados = arquivo_de_entrada.read()
 
     chave_expandida = expandir_chave(chave)
+    dados_decifrados = b''
+
+    for i in range(0, len(dados), 16):
+        bloco = dados[i:i+16]
+        dados_decifrados += decifrar_bloco(bloco, chave_expandida)
+
+    dados_sem_padding = remover_padding(dados_decifrados)
 
     with open(caminho_da_saida, 'wb') as arquivo_de_saida:
-        for i in range(0, len(dados), 16):
-            bloco = dados[i:i + 16]
-            bloco_decifrado = decifrar_bloco(bloco, chave_expandida)
-            arquivo_de_saida.write(bloco_decifrado)
-
-    with open(caminho_da_saida, 'rb+') as arquivo_de_saida:
-        dados_decifrados = arquivo_de_saida.read()
-        dados_com_padding = remover_padding(dados_decifrados)
-        arquivo_de_saida.seek(0)
-        arquivo_de_saida.write(dados_com_padding)
-        arquivo_de_saida.truncate()
+        arquivo_de_saida.write(dados_sem_padding)
 
 
 def main():
@@ -216,7 +201,7 @@ def main():
     if len(chave) != 16:
         print("A chave deve ter 16 bytes.")
         return
-
+    
     if operacao == '1':
         cifrar(caminho_da_entrada, caminho_da_saida, chave)
         print("Arquivo cifrado com sucesso.")
@@ -224,10 +209,9 @@ def main():
     elif operacao == '2':
         decifrar(caminho_da_entrada, caminho_da_saida, chave)
         print("Arquivo decifrado com sucesso.")
-
+        
     else:
         print("Operação inválida.")
-
 
 if __name__ == "__main__":
     main()
