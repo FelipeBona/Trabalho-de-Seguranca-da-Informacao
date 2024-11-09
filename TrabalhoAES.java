@@ -209,7 +209,8 @@ public class AES {
             byte[] blocoDecifrado = flattenByteMatrix(estado);
             System.arraycopy(blocoDecifrado, 0, resultadoFinal, blocoIdx * 16, 16);
         }
-        
+
+        resultadoFinal = removerPadding(resultadoFinal);
         return resultadoFinal;
     }
 
@@ -261,12 +262,10 @@ public class AES {
         return novoEstado;
     }
 
-    private static byte[] cifrar(byte[] textoSimples, byte[] chave) {
+    private static byte[] cifrar(byte[] textoSimples, byte[] chave) { // Adicionar padding
         textoSimples = aplicarPadding(textoSimples);
-
         int numBlocos = textoSimples.length / 16;
         byte[] resultadoFinal = new byte[textoSimples.length];
-
         byte[][] matrizDeEstado = gerarMatrizDeEstado(chave);
         byte[][] roundKeys = gerarRoundKeys(matrizDeEstado);
         roundKeys = expandirChave(roundKeys);
@@ -274,8 +273,8 @@ public class AES {
         for (int blocoIdx = 0; blocoIdx < numBlocos; blocoIdx++) {
             byte[] bloco = Arrays.copyOfRange(textoSimples, blocoIdx * 16, (blocoIdx + 1) * 16);
             byte[][] temp = new byte[4][4];
-
             byte[][] estado = new byte[4][4];
+
             for (int i = 0; i < 4; i++) {
                 for (int j = 0; j < 4; j++) {
                     estado[i][j] = bloco[i + (j * 4)];
@@ -306,12 +305,10 @@ public class AES {
 
             estado = substituirPalavra02(estado);
             estado = addRoundKey(estado, temp);
-
             byte[] blocoCifrado = flattenByteMatrix(estado);
             System.arraycopy(blocoCifrado, 0, resultadoFinal, blocoIdx * 16, 16);
         }
 
-        resultadoFinal[resultadoFinal.length - 1] = (byte) padding;
         return resultadoFinal;
     }
 
@@ -397,24 +394,30 @@ public class AES {
         return novoEstado;
     }
 
-    private static byte[] aplicarPadding(byte[] textoSimples) {
-        int tamanho = textoSimples.length;
-        padding = 16 - (tamanho % 16);
+    private static byte[] aplicarPadding(byte[] dados) {
+        int tamanhoBloco = 16;
+        int comprimentoDados = dados.length;
+        int numeroPadBytes = tamanhoBloco - (comprimentoDados % tamanhoBloco);
 
-        if (padding == 0) {
-            padding = 16;
+        byte[] dadosComPadding = new byte[comprimentoDados + numeroPadBytes];
+        System.arraycopy(dados, 0, dadosComPadding, 0, comprimentoDados);
+
+        for (int i = comprimentoDados; i < dadosComPadding.length; i++) {
+            dadosComPadding[i] = (byte) numeroPadBytes;
         }
 
-        byte[] paddedBytes = new byte[tamanho + padding];
-        System.arraycopy(textoSimples, 0, paddedBytes, 0, tamanho);
-
-        for (int i = tamanho; i < paddedBytes.length; i++) {
-            paddedBytes[i] = (byte) padding;
-        }
-
-        return paddedBytes;
+        return dadosComPadding;
     }
-    
+
+    private static byte[] removerPadding(byte[] dados) {
+        int comprimentoDados = dados.length;
+        int numeroPadBytes = dados[comprimentoDados - 1];
+        byte[] dadosSemPadding = new byte[comprimentoDados - numeroPadBytes];
+        System.arraycopy(dados, 0, dadosSemPadding, 0, dadosSemPadding.length);
+
+        return dadosSemPadding;
+    }
+
     private static byte[][] gerarMatrizDeEstado(byte[] chave) {
         byte[][] matrizDeEstado = new byte[4][4];
         int contador = 0;
